@@ -1,0 +1,52 @@
+schema 
+    : value
+    ;
+
+value
+    : object
+    | array
+    | STRING
+    ;
+
+object
+    : '{' pair (COMMA pair)* '}'
+    ;
+
+pair
+    : STRING COLON value
+    ;
+
+array
+    : '[' range COMMA value (COMMA value)* ']'
+    | '[' value (COMMA value)* ']'
+    ;
+
+range
+    : '<' NATURAL '|' NATURAL '>'
+    | '<' NATURAL '>'
+    ;
+
+COMMA
+    : ','
+    ;
+
+COLON
+    : ':'
+    ;
+
+STRING
+    : '"' (UNICODE)* '"'
+    ;
+
+HEX
+    : [0-9a-fA-F]
+    ;
+
+UNICODE
+    : '\\u' HEX HEX HEX HEX
+    ;
+
+NATURAL
+    : [1-9][0-9]*
+    | [0-9]
+    ;

@@ -1,0 +1,10 @@
+{
+    "id": natural,
+    "name": name,
+    "pets": [<1|5>,
+        {
+            "name": firstName,
+            "age": integer <1|12>
+        }
+    ]
+}
