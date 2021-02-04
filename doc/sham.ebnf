@@ -22,8 +22,8 @@ array
     ;
 
 range
-    : '<' NATURAL '|' NATURAL '>'
-    | '<' NATURAL '>'
+    : '(' NATURAL COMMA NATURAL ')'
+    | '(' NATURAL ')'
     ;
 
 COMMA
