@@ -1,15 +1,21 @@
 package sham
 
-import "math/rand"
+import (
+	"math/rand"
+)
+
+type Node interface {
+	Generator
+}
 
 type Schema struct {
-	Root Generator
+	Root Node
 }
 
 func (s Schema) Generate() interface{} { return s.Root.Generate() }
 
 type Object struct {
-	Values map[string]Generator
+	Values map[string]Node
 }
 
 func (o Object) Generate() interface{} {
@@ -21,12 +27,16 @@ func (o Object) Generate() interface{} {
 }
 
 type Array struct {
-	R     Range
-	Inner Generator
+	Range *Range
+	Inner Node
 }
 
 func (a Array) Generate() interface{} {
-	n := a.R.GetValue()
+	n := 1
+	if a.Range != nil {
+		n = a.Range.GetValue()
+	}
+
 	out := make([]interface{}, n)
 	for i := 0; i < n; i++ {
 		out[i] = a.Inner.Generate()

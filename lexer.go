@@ -25,13 +25,43 @@ const (
 	TokIdent
 )
 
+var tokenStrings = map[TokenType]string{
+	TokInvalid:  "<INVALID>",
+	TokEOF:      "<EOF>",
+	TokLBrace:   "{",
+	TokRBrace:   "}",
+	TokLBracket: "[",
+	TokRBracket: "]",
+	TokLParen:   "(",
+	TokRParen:   ")",
+	TokColon:    ":",
+	TokComma:    ",",
+	TokString:   "<STRING>",
+	TokInteger:  "<INTEGER",
+	TokIdent:    "<IDENT>",
+}
+
+func (t TokenType) String() string {
+	s, ok := tokenStrings[t]
+	if !ok {
+		s = fmt.Sprintf("%%!(UNKNOWN=%d)", t)
+	}
+	return s
+}
+
+type QuoteType byte
+
+const (
+	QuoteSingle QuoteType = '\''
+	QuoteDouble QuoteType = '"'
+)
+
 type Token struct {
 	Type  TokenType
 	Value string
 }
 
 func newToken(t TokenType, v string) Token {
-	fmt.Printf("Adding token: %v: %s\n", t, v)
 	return Token{Type: t, Value: v}
 }
 
@@ -60,7 +90,7 @@ func Tokenize(source string) ([]Token, error) {
 				return nil, err
 			}
 			t = newToken(TokIdent, v)
-			i += len(v)
+			i += len(v) - 1
 		} else if isDigit(c) {
 			v, err := scanInteger(source, i)
 			if err != nil {
@@ -87,7 +117,14 @@ func Tokenize(source string) ([]Token, error) {
 			case ',':
 				t = newToken(TokComma, ",")
 			case '"':
-				v, err := scanString(source, i)
+				v, err := scanString(source, QuoteDouble, i)
+				if err != nil {
+					return nil, err
+				}
+				t = newToken(TokString, v)
+				i += len(v) + 1
+			case '\'':
+				v, err := scanString(source, QuoteSingle, i)
 				if err != nil {
 					return nil, err
 				}
@@ -106,11 +143,11 @@ func Tokenize(source string) ([]Token, error) {
 	return tokens, nil
 }
 
-func scanString(source string, i int) (string, error) {
+func scanString(source string, qt QuoteType, i int) (string, error) {
 	start := i
 	i++
 	for i < len(source) {
-		if source[i] == '"' {
+		if source[i] == byte(qt) {
 			return source[start+1 : i], nil
 		}
 		i++
@@ -121,7 +158,6 @@ func scanString(source string, i int) (string, error) {
 
 func scanIdent(source string, i int) (string, error) {
 	start := i
-	i++
 	for i < len(source) {
 		if !isAlphaNumeric(source[i]) {
 			return source[start:i], nil
@@ -129,7 +165,7 @@ func scanIdent(source string, i int) (string, error) {
 		i++
 	}
 
-	return "", errors.New("invalid identifier")
+	return source[start:i], nil
 }
 
 func scanInteger(source string, i int) (string, error) {
@@ -142,5 +178,5 @@ func scanInteger(source string, i int) (string, error) {
 		i++
 	}
 
-	return "", errors.New("invalid integer")
+	return source[start:i], nil
 }
