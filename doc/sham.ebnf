@@ -5,6 +5,8 @@ schema
 value
     : object
     | array
+    | generator
+    | range
     | STRING
     ;
 
@@ -19,6 +21,10 @@ pair
 array
     : '[' range COMMA value (COMMA value)* ']'
     | '[' value (COMMA value)* ']'
+    ;
+
+generator
+    : [a-zA-Z][a-zA-Z]*
     ;
 
 range
