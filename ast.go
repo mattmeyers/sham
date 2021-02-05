@@ -12,7 +12,13 @@ type Schema struct {
 	Root Node
 }
 
-func (s Schema) Generate() interface{} { return s.Root.Generate() }
+func (s Schema) Generate() interface{} {
+	if s.Root == nil {
+		return nil
+	}
+
+	return s.Root.Generate()
+}
 
 type Object struct {
 	Values map[string]Node
@@ -32,6 +38,10 @@ type Array struct {
 }
 
 func (a Array) Generate() interface{} {
+	if a.Inner == nil {
+		return []interface{}{}
+	}
+
 	n := 1
 	if a.Range != nil {
 		n = a.Range.GetValue()
@@ -56,6 +66,8 @@ func (r Range) GetValue() int {
 
 	return rand.Intn((r.Max+1)-r.Min) + r.Min
 }
+
+func (r Range) Generate() interface{} { return r.GetValue() }
 
 type Literal struct {
 	Value interface{}
