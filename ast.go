@@ -1,6 +1,7 @@
 package sham
 
 import (
+	"fmt"
 	"math/rand"
 )
 
@@ -68,6 +69,20 @@ func (r Range) GetValue() int {
 }
 
 func (r Range) Generate() interface{} { return r.GetValue() }
+
+type FormattedString struct {
+	Raw    string
+	Format string
+	Params []Generator
+}
+
+func (f FormattedString) Generate() interface{} {
+	params := make([]interface{}, len(f.Params))
+	for i, p := range f.Params {
+		params[i] = p.Generate()
+	}
+	return fmt.Sprintf(f.Format, params...)
+}
 
 type Literal struct {
 	Value interface{}

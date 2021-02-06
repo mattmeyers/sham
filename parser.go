@@ -3,6 +3,7 @@ package sham
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 )
 
@@ -63,19 +64,19 @@ func (p *Parser) parseValue() (Node, error) {
 	case TokLBrace:
 		n, err = p.parseObject()
 		if err != nil {
-			return Schema{}, err
+			return nil, err
 		}
 	case TokLBracket:
 		n, err = p.parseArray()
 		if err != nil {
-			return Schema{}, err
+			return nil, err
 		}
 	case TokLParen:
 		n, err = p.parseRange()
 	case TokIdent:
 		g, ok := terminalGenerators[t.Value]
 		if !ok {
-			return Schema{}, errors.New("unknown terminal generator")
+			return nil, errors.New("unknown terminal generator")
 		}
 		n = g
 	case TokInteger:
@@ -83,6 +84,11 @@ func (p *Parser) parseValue() (Node, error) {
 		n = Literal{Value: i}
 	case TokString:
 		n = Literal{Value: t.Value}
+	case TokFString:
+		n, err = p.parseFString()
+		if err != nil {
+			return nil, err
+		}
 	case TokEOF:
 		return nil, errors.New("empty input")
 	}
@@ -205,4 +211,29 @@ func (p *Parser) parseRange() (Range, error) {
 	}
 
 	return r, nil
+}
+
+var fStringRegex = regexp.MustCompile(`(\${[^\${}]*})`)
+
+func (p *Parser) parseFString() (FormattedString, error) {
+	t := p.current()
+
+	matches := fStringRegex.FindAllString(t.Value, -1)
+	params := make([]Generator, len(matches))
+
+	for i, m := range matches {
+		g, ok := terminalGenerators[m[2:len(m)-1]]
+		if !ok {
+			return FormattedString{}, fmt.Errorf("unknown terminal generator %s in formatted string", m)
+		}
+		params[i] = g
+	}
+
+	format := fStringRegex.ReplaceAllString(t.Value, "%v")
+
+	return FormattedString{
+		Raw:    t.Value,
+		Format: format,
+		Params: params,
+	}, nil
 }

@@ -21,6 +21,7 @@ const (
 	TokComma
 
 	TokString
+	TokFString
 	TokInteger
 	TokIdent
 )
@@ -37,6 +38,7 @@ var tokenStrings = map[TokenType]string{
 	TokColon:    ":",
 	TokComma:    ",",
 	TokString:   "<STRING>",
+	TokFString:  "<F STRING>",
 	TokInteger:  "<INTEGER",
 	TokIdent:    "<IDENT>",
 }
@@ -52,8 +54,9 @@ func (t TokenType) String() string {
 type QuoteType byte
 
 const (
-	QuoteSingle QuoteType = '\''
-	QuoteDouble QuoteType = '"'
+	QuoteSingle   QuoteType = '\''
+	QuoteDouble   QuoteType = '"'
+	QuoteBacktick QuoteType = '`'
 )
 
 type Token struct {
@@ -129,6 +132,13 @@ func Tokenize(source string) ([]Token, error) {
 					return nil, err
 				}
 				t = newToken(TokString, v)
+				i += len(v) + 1
+			case '`':
+				v, err := scanString(source, QuoteBacktick, i)
+				if err != nil {
+					return nil, err
+				}
+				t = newToken(TokFString, v)
 				i += len(v) + 1
 			default:
 				return nil, fmt.Errorf("unknown token provided: %q", c)
