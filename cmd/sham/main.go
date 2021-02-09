@@ -19,16 +19,16 @@ func main() {
 	rand.Seed(time.Now().Unix())
 	flag.Parse()
 
-	ast, err := sham.NewParser(flag.Arg(0)).Parse()
+	d, err := sham.Generate([]byte(flag.Arg(0)))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	var out []byte
 	if *oPrettyPrint {
-		out, err = json.MarshalIndent(ast.Generate(), "", "    ")
+		out, err = json.MarshalIndent(d, "", "    ")
 	} else {
-		out, err = json.Marshal(ast.Generate())
+		out, err = json.Marshal(d)
 	}
 
 	if err != nil {

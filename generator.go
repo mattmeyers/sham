@@ -6,7 +6,7 @@ type Generator interface {
 	Generate() interface{}
 }
 
-var terminalGenerators = map[string]Generator{
+var TerminalGenerators = map[string]Generator{
 	"name":      Name{},
 	"firstName": FirstName{},
 	"lastName":  LastName{},

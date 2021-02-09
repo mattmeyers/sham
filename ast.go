@@ -77,6 +77,10 @@ type FormattedString struct {
 }
 
 func (f FormattedString) Generate() interface{} {
+	if len(f.Params) == 0 {
+		return f.Raw
+	}
+
 	params := make([]interface{}, len(f.Params))
 	for i, p := range f.Params {
 		params[i] = p.Generate()

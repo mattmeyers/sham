@@ -8,14 +8,14 @@ import (
 )
 
 type Parser struct {
-	source string
+	source []byte
 	tokens []Token
 	i      int
 }
 
 var errEOF = errors.New("EOF")
 
-func NewParser(d string) *Parser {
+func NewParser(d []byte) *Parser {
 	return &Parser{
 		source: d,
 		tokens: make([]Token, 0),
@@ -74,7 +74,7 @@ func (p *Parser) parseValue() (Node, error) {
 	case TokLParen:
 		n, err = p.parseRange()
 	case TokIdent:
-		g, ok := terminalGenerators[t.Value]
+		g, ok := TerminalGenerators[t.Value]
 		if !ok {
 			return nil, errors.New("unknown terminal generator")
 		}
@@ -213,16 +213,20 @@ func (p *Parser) parseRange() (Range, error) {
 	return r, nil
 }
 
-var fStringRegex = regexp.MustCompile(`(\${[^\${}]*})`)
+var fStringRegex = regexp.MustCompile(`\${([^\${}]*)}`)
 
 func (p *Parser) parseFString() (FormattedString, error) {
 	t := p.current()
 
 	matches := fStringRegex.FindAllString(t.Value, -1)
+	if len(matches) == 0 {
+		return FormattedString{Raw: t.Value}, nil
+	}
+
 	params := make([]Generator, len(matches))
 
 	for i, m := range matches {
-		g, ok := terminalGenerators[m[2:len(m)-1]]
+		g, ok := TerminalGenerators[m[2:len(m)-1]]
 		if !ok {
 			return FormattedString{}, fmt.Errorf("unknown terminal generator %s in formatted string", m)
 		}
