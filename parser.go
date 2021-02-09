@@ -63,34 +63,32 @@ func (p *Parser) parseValue() (Node, error) {
 	switch t.Type {
 	case TokLBrace:
 		n, err = p.parseObject()
-		if err != nil {
-			return nil, err
-		}
 	case TokLBracket:
 		n, err = p.parseArray()
-		if err != nil {
-			return nil, err
-		}
 	case TokLParen:
 		n, err = p.parseRange()
 	case TokIdent:
-		g, ok := TerminalGenerators[t.Value]
-		if !ok {
-			return nil, errors.New("unknown terminal generator")
-		}
-		n = g
+		n, err = p.parseIdent()
 	case TokInteger:
-		i, _ := strconv.Atoi(t.Value)
-		n = Literal{Value: i}
+		n, err = p.parseInteger()
+	case TokFloat:
+		n, err = p.parseFloat()
 	case TokString:
 		n = Literal{Value: t.Value}
 	case TokFString:
 		n, err = p.parseFString()
-		if err != nil {
-			return nil, err
-		}
+	case TokNull:
+		n = Literal{Value: nil}
+	case TokTrue:
+		n = Literal{Value: true}
+	case TokFalse:
+		n = Literal{Value: false}
 	case TokEOF:
-		return nil, errors.New("empty input")
+		err = errors.New("empty input")
+	}
+
+	if err != nil {
+		return nil, err
 	}
 
 	return n, nil
@@ -119,7 +117,7 @@ func (p *Parser) parseObject() (Object, error) {
 
 		t = p.advance()
 		if t.Type != TokRBrace && t.Type != TokComma {
-			return Object{}, fmt.Errorf(`expected "," or "}", got %v`, t)
+			return Object{}, fmt.Errorf(`expected "," or "}", got %q`, t)
 		} else if t.Type == TokRBrace {
 			break
 		}
@@ -160,7 +158,7 @@ func (p *Parser) parseArray() (Array, error) {
 		p.advance()
 		r, err := p.parseRange()
 		if err != nil {
-			return Array{}, nil
+			return Array{}, err
 		}
 		arr.Range = &r
 
@@ -184,8 +182,7 @@ func (p *Parser) parseArray() (Array, error) {
 	return arr, nil
 }
 
-func (p *Parser) parseRange() (Range, error) {
-	r := Range{}
+func (p *Parser) parseRange() (r Range, err error) {
 	t := p.current()
 
 	if t = p.advance(); t.Type != TokInteger {
@@ -195,7 +192,14 @@ func (p *Parser) parseRange() (Range, error) {
 	i, _ := strconv.Atoi(t.Value)
 	r.Min = i
 
-	if t = p.advance(); t.Type != TokComma {
+	t = p.advance()
+
+	if t.Type == TokRParen {
+		r.Max = r.Min
+		return r, nil
+	}
+
+	if t.Type != TokComma {
 		return Range{}, fmt.Errorf(`expected ",", got %v`, t)
 	}
 
@@ -203,7 +207,12 @@ func (p *Parser) parseRange() (Range, error) {
 		return Range{}, fmt.Errorf(`expected integer for range max, got %v`, t)
 	}
 
-	i, _ = strconv.Atoi(t.Value)
+	i, err = strconv.Atoi(t.Value)
+	if err != nil {
+		return Range{}, err
+	} else if i < r.Min {
+		return Range{}, errors.New("range maximum cannot be less than the minimum")
+	}
 	r.Max = i
 
 	if t = p.advance(); t.Type != TokRParen {
@@ -240,4 +249,31 @@ func (p *Parser) parseFString() (FormattedString, error) {
 		Format: format,
 		Params: params,
 	}, nil
+}
+
+func (p *Parser) parseInteger() (Literal, error) {
+	t := p.current()
+	i, err := strconv.Atoi(t.Value)
+	if err != nil {
+		return Literal{}, err
+	}
+	return Literal{Value: i}, nil
+}
+
+func (p *Parser) parseFloat() (Literal, error) {
+	t := p.current()
+	f, err := strconv.ParseFloat(t.Value, 10)
+	if err != nil {
+		return Literal{}, err
+	}
+	return Literal{Value: f}, nil
+}
+
+func (p *Parser) parseIdent() (Generator, error) {
+	g, ok := TerminalGenerators[p.current().Value]
+	if !ok {
+		return nil, errors.New("unknown terminal generator")
+	}
+
+	return g, nil
 }

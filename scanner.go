@@ -223,5 +223,9 @@ func (s *Scanner) scanNumber() (TokenType, string) {
 		}
 	}
 
+	if ch != eof {
+		s.unread()
+	}
+
 	return tokType, s.buf.String()
 }
