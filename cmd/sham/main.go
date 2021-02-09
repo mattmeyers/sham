@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/mattmeyers/sham"
@@ -19,7 +21,18 @@ func main() {
 	rand.Seed(time.Now().Unix())
 	flag.Parse()
 
-	d, err := sham.Generate([]byte(flag.Arg(0)))
+	schema, err := readFromStdin()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if n := flag.NArg(); n > 1 || (schema != nil && n > 0) {
+		log.Fatal("only a single schema can be processed")
+	} else if n == 1 {
+		schema = []byte(flag.Arg(0))
+	}
+
+	d, err := sham.Generate(schema)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,4 +49,8 @@ func main() {
 	}
 
 	fmt.Println(string(out))
+}
+
+func readFromStdin() ([]byte, error) {
+	return ioutil.ReadAll(os.Stdin)
 }
