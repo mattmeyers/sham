@@ -20,6 +20,7 @@ const (
 
 	TokString
 	TokFString
+	TokRegex
 	TokInteger
 	TokFloat
 	TokIdent
@@ -42,6 +43,7 @@ var tokenStrings = map[TokenType]string{
 	TokComma:    ",",
 	TokString:   "<STRING>",
 	TokFString:  "<F STRING>",
+	TokRegex:    "<REGEX>",
 	TokInteger:  "<INTEGER",
 	TokFloat:    "<FLOAT>",
 	TokIdent:    "<IDENT>",

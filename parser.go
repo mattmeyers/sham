@@ -77,6 +77,8 @@ func (p *Parser) parseValue() (Node, error) {
 		n = Literal{Value: t.Value}
 	case TokFString:
 		n, err = p.parseFString()
+	case TokRegex:
+		n, err = p.parseRegex()
 	case TokNull:
 		n = Literal{Value: nil}
 	case TokTrue:
@@ -249,6 +251,16 @@ func (p *Parser) parseFString() (FormattedString, error) {
 		Format: format,
 		Params: params,
 	}, nil
+}
+
+func (p *Parser) parseRegex() (Regex, error) {
+	t := p.current()
+
+	r, err := NewRegex(t.Value)
+	if err != nil {
+		return Regex{}, err
+	}
+	return r, nil
 }
 
 func (p *Parser) parseInteger() (Literal, error) {

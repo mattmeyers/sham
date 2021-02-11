@@ -72,6 +72,8 @@ func (s *Scanner) Scan() (tok TokenType, lit string) {
 	} else if isDigit(ch) || ch == '-' {
 		s.unread()
 		return s.scanNumber()
+	} else if ch == '/' {
+		return TokRegex, s.scanRegex()
 	}
 
 	switch ch {
@@ -228,4 +230,23 @@ func (s *Scanner) scanNumber() (TokenType, string) {
 	}
 
 	return tokType, s.buf.String()
+}
+
+func (s *Scanner) scanRegex() string {
+	s.buf.Reset()
+
+	ch := '/'
+	for {
+		prev := ch
+		ch = s.read()
+		if ch == eof {
+			break
+		} else if ch == '/' && prev != '\\' {
+			break
+		} else {
+			_, _ = s.buf.WriteRune(ch)
+		}
+	}
+
+	return s.buf.String()
 }

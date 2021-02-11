@@ -3,7 +3,9 @@
     "friends": [(1,5),
         {
             "name": name,
-            "age": (20,30)
+            "age": (20,30),
+            "phone": /\(\d{3}\) \d{3}-\d{4}/,
+            "job": /programmer|accountant|lawyer/
         }
     ]
 }
