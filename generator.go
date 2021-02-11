@@ -1,33 +1,50 @@
 package sham
 
-import "math/rand"
+import (
+	"math/rand"
+	"strings"
+)
 
 type Generator interface {
 	Generate() interface{}
 }
 
+type GeneratorFunc func() interface{}
+
+func (f GeneratorFunc) Generate() interface{} { return f() }
+
 var TerminalGenerators = map[string]Generator{
-	"name":      Name{},
-	"firstName": FirstName{},
-	"lastName":  LastName{},
+	"name":        GeneratorFunc(Name),
+	"firstName":   GeneratorFunc(FirstName),
+	"lastName":    GeneratorFunc(LastName),
+	"phoneNumber": GeneratorFunc(PhoneNumber),
 }
 
 func getRandomString(vals []string) string { return vals[rand.Intn(len(vals))] }
 
-type Name struct{}
-
-func (n Name) Generate() interface{} {
+func Name() interface{} {
 	return getRandomString(firstNames) + " " + getRandomString(lastNames)
 }
 
-type FirstName struct{}
-
-func (n FirstName) Generate() interface{} {
+func FirstName() interface{} {
 	return getRandomString(firstNames)
 }
 
-type LastName struct{}
-
-func (n LastName) Generate() interface{} {
+func LastName() interface{} {
 	return getRandomString(lastNames)
+}
+
+func PhoneNumber() interface{} {
+	const digits string = "1234567890"
+	var sb strings.Builder
+
+	for i := 0; i < 12; i++ {
+		if i == 3 || i == 7 {
+			sb.WriteRune('-')
+		} else {
+			sb.WriteByte(digits[rand.Intn(len(digits))])
+		}
+	}
+
+	return sb.String()
 }

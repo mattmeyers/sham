@@ -52,5 +52,14 @@ func main() {
 }
 
 func readFromStdin() ([]byte, error) {
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	if stat.Size() == 0 {
+		return nil, nil
+	}
+
 	return ioutil.ReadAll(os.Stdin)
 }
