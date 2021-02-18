@@ -21,14 +21,27 @@ func (s Schema) Generate() interface{} {
 	return s.Root.Generate()
 }
 
+// type Object struct {
+// 	Values map[string]Node
+// }
+
 type Object struct {
-	Values map[string]Node
+	Values []KV
+}
+
+type KV struct {
+	Key   string
+	Value Node
+}
+
+func (m *Object) AppendPair(k string, v Node) {
+	m.Values = append(m.Values, KV{Key: k, Value: v})
 }
 
 func (o Object) Generate() interface{} {
-	out := make(map[string]interface{})
-	for k, v := range o.Values {
-		out[k] = v.Generate()
+	out := NewOrderedMap()
+	for _, kv := range o.Values {
+		out.Set(kv.Key, kv.Value.Generate())
 	}
 	return out
 }

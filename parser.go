@@ -97,7 +97,7 @@ func (p *Parser) parseValue() (Node, error) {
 }
 
 func (p *Parser) parseObject() (Object, error) {
-	obj := Object{Values: make(map[string]Node)}
+	obj := Object{}
 	t := p.current()
 
 	if p.peek().Type == TokRBrace {
@@ -115,7 +115,7 @@ func (p *Parser) parseObject() (Object, error) {
 			return Object{}, err
 		}
 
-		obj.Values[k] = n
+		obj.AppendPair(k, n)
 
 		t = p.advance()
 		if t.Type != TokRBrace && t.Type != TokComma {
