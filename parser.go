@@ -8,18 +8,35 @@ import (
 )
 
 type Parser struct {
-	source []byte
-	tokens []Token
-	i      int
+	terminalGenerators map[string]Generator
+	source             []byte
+	tokens             []Token
+	i                  int
 }
 
 var errEOF = errors.New("EOF")
 
 func NewParser(d []byte) *Parser {
 	return &Parser{
-		source: d,
-		tokens: make([]Token, 0),
-		i:      0,
+		terminalGenerators: make(map[string]Generator),
+		source:             d,
+		tokens:             make([]Token, 0),
+		i:                  0,
+	}
+}
+
+func NewDefaultParser(d []byte) *Parser {
+	return &Parser{
+		terminalGenerators: TerminalGenerators,
+		source:             d,
+		tokens:             make([]Token, 0),
+		i:                  0,
+	}
+}
+
+func (p *Parser) RegisterGenerators(gs map[string]Generator) {
+	for k, v := range gs {
+		p.terminalGenerators[k] = v
 	}
 }
 
@@ -281,11 +298,11 @@ func (p *Parser) parseFloat() (Literal, error) {
 	return Literal{Value: f}, nil
 }
 
-func (p *Parser) parseIdent() (Generator, error) {
-	g, ok := TerminalGenerators[p.current().Value]
+func (p *Parser) parseIdent() (TerminalGenerator, error) {
+	n := p.current().Value
+	fn, ok := p.terminalGenerators[n]
 	if !ok {
-		return nil, errors.New("unknown terminal generator")
+		return TerminalGenerator{}, fmt.Errorf("unknown terminal generator %q", n)
 	}
-
-	return g, nil
+	return TerminalGenerator{Name: n, fn: fn}, nil
 }

@@ -1,4 +1,4 @@
-package sham
+package gen
 
 var firstNames = []string{
 	"Alice",

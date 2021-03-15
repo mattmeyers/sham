@@ -21,10 +21,6 @@ func (s Schema) Generate() interface{} {
 	return s.Root.Generate()
 }
 
-// type Object struct {
-// 	Values map[string]Node
-// }
-
 type Object struct {
 	Values []KV
 }
@@ -99,6 +95,15 @@ func (f FormattedString) Generate() interface{} {
 		params[i] = p.Generate()
 	}
 	return fmt.Sprintf(f.Format, params...)
+}
+
+type TerminalGenerator struct {
+	Name string
+	fn   Generator
+}
+
+func (t TerminalGenerator) Generate() interface{} {
+	return t.fn.Generate()
 }
 
 type Literal struct {
