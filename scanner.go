@@ -3,6 +3,7 @@ package sham
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 )
 
@@ -14,11 +15,16 @@ func isDigit(c rune) bool         { return '0' <= c && c <= '9' }
 func isPositiveDigit(c rune) bool { return '1' <= c && c <= '9' }
 func isAlphaNumeric(c rune) bool  { return isAlpha(c) || isDigit(c) }
 
+// Scanner maintains of the state of the tokenization process. This scanner
+// maintains an internal buffer to minimize allocations as the Scanner reads
+// through the source.
 type Scanner struct {
 	r   *bufio.Reader
 	buf *bytes.Buffer
+	err error
 }
 
+// NewScanner initializes a Scanner with the provided schema.
 func NewScanner(b []byte) *Scanner {
 	return &Scanner{
 		r:   bufio.NewReader(bytes.NewBuffer(b)),
@@ -42,6 +48,8 @@ func (s *Scanner) unread() {
 	}
 }
 
+// Tokenize initializes a Scanner and performs the tokenization of the source. The
+// Scanner will continue reading until EOF or an invalid token is read.
 func Tokenize(source []byte) ([]Token, error) {
 	s := NewScanner(source)
 	tokens := make([]Token, 0)
@@ -54,12 +62,21 @@ func Tokenize(source []byte) ([]Token, error) {
 			return tokens, nil
 		} else if t == TokInvalid {
 			return nil, fmt.Errorf("unknown token: %q", lit)
+		} else if s.err != nil {
+			return nil, s.err
 		}
 
 		tokens = append(tokens, newToken(t, lit))
 	}
 }
 
+// Scan consumes characters in the source until a full token is determined. An
+// error will never occur while scanning. Instead, TokInvalid will be returned
+// if a token cannot be created.
+//
+// Whitespace is not important in the Sham language. If whitespace is encountered
+// outside of string literals or regular expressions, then it will be aggregated
+// into a single TokWS token.
 func (s *Scanner) Scan() (tok TokenType, lit string) {
 	ch := s.read()
 
@@ -149,7 +166,8 @@ func (s *Scanner) scanString(qt QuoteType) string {
 
 	for {
 		if ch := s.read(); ch == eof {
-			break
+			s.err = errors.New("unterminated string")
+			return ""
 		} else if ch == rune(qt) {
 			break
 		} else {
@@ -240,6 +258,7 @@ func (s *Scanner) scanRegex() string {
 		prev := ch
 		ch = s.read()
 		if ch == eof {
+			s.err = errors.New("unterminated regex")
 			break
 		} else if ch == '/' && prev != '\\' {
 			break

@@ -7,8 +7,18 @@ import (
 	"strconv"
 )
 
+// Parser maintains the internal state of the language parser. This struct takes
+// a slice of tokens as input and produces an AST if and only if the token stream
+// represents a valid Sham schema. Part of the internal state is the terminalGenerator
+// map. This map of terminal generators must be set prior to the initiating the
+// parsing method. If a terminal generator is referenced in the schema, but not
+// defined in the terminal generator map, then the parsing process will be halted
+// with an error.
+//
+// To ensure the parser begins with the proper state, one of the constructor functions
+// should be used.
 type Parser struct {
-	terminalGenerators map[string]Generator
+	TerminalGenerators map[string]Generator
 	source             []byte
 	tokens             []Token
 	i                  int
@@ -16,27 +26,34 @@ type Parser struct {
 
 var errEOF = errors.New("EOF")
 
+// NewParser creates a new Parser instance with an empty terminal generator map.
 func NewParser(d []byte) *Parser {
 	return &Parser{
-		terminalGenerators: make(map[string]Generator),
+		TerminalGenerators: make(map[string]Generator),
 		source:             d,
 		tokens:             make([]Token, 0),
 		i:                  0,
 	}
 }
 
+// NewDefaultParser creates a new Parser instance using the default terminal
+// generators map.
 func NewDefaultParser(d []byte) *Parser {
 	return &Parser{
-		terminalGenerators: TerminalGenerators,
+		TerminalGenerators: TerminalGenerators,
 		source:             d,
 		tokens:             make([]Token, 0),
 		i:                  0,
 	}
 }
 
+// RegisterGenerators merges a terminal generator map into the parser's internal
+// terminal generator map. If a generator is already registered, then the existing
+// generator will be overwritten with the new. To avoid parsing errors, all terminal
+// generators should be registered prior to parsing.
 func (p *Parser) RegisterGenerators(gs map[string]Generator) {
 	for k, v := range gs {
-		p.terminalGenerators[k] = v
+		p.TerminalGenerators[k] = v
 	}
 }
 
@@ -54,6 +71,12 @@ func (p *Parser) advance() Token {
 	return t
 }
 
+// Parse generates a new AST from the schema provided to the parser. The parser
+// combines multiple steps to generate this structure. The schema is first
+// tokenized. If an invalid token is presented (either an unknown character or
+// an unterminated sequence), then a scanning error will be returned. Upon success,
+// the slice of tokens will be parsed. If the tokens are representative of a valid
+// Sham schema, then an AST will be returned. Otherwise and error will be returned.
 func (p *Parser) Parse() (Schema, error) {
 	tokens, err := Tokenize(p.source)
 	if err != nil {
@@ -300,7 +323,7 @@ func (p *Parser) parseFloat() (Literal, error) {
 
 func (p *Parser) parseIdent() (TerminalGenerator, error) {
 	n := p.current().Value
-	fn, ok := p.terminalGenerators[n]
+	fn, ok := p.TerminalGenerators[n]
 	if !ok {
 		return TerminalGenerator{}, fmt.Errorf("unknown terminal generator %q", n)
 	}
