@@ -15,11 +15,13 @@ sham is a tool for generating random data
 
 Usage:
 
-    sham [options] <schema>
+	sham [options] <schema>
 
 Options:
-
-    -pretty     pretty print the result
+	-f value	set the output format: json, xml (default json)
+	-n int		the number of generations to perform (default 1)		
+	-pretty		pretty print the result
+	-h, --help	show this help message
 ```
 
 To ensure the schema is not affected by any shell escaping, it is recommended that the schema be surrounded by single quotes.
@@ -34,7 +36,9 @@ The following schema
     "friends": [(1,5),
         {
             "name": name,
-            "age": (20,30)
+            "age": (20,30),
+            "phone": /\(\d{3}\) \d{3}-\d{4}/,
+            "job": /programmer|accountant|lawyer/
         }
     ]
 }
@@ -48,11 +52,15 @@ will produce data such as
     "friends": [
         {
             "name: "Bob Smith",
-            "age": 21
+            "age": 21,
+            "phone": "(555) 746-8193",
+            "job": "programmer"
         },
         {
             "name: "Matt Doe",
-            "age": 28
+            "age": 28,
+            "phone": "(555) 395-1823",
+            "job": "lawyer"
         }
     ]
 }
@@ -60,7 +68,7 @@ will produce data such as
 
 ## Sham Language
 
-The Sham language defines the structure of the random data. This language is a superset of JSON that adds integer ranges and generator functions. For the full grammar, refer to `doc/sham.ebnf`. For the base JSON grammar, refer to [RFC 8259](https://tools.ietf.org/html/rfc8259). Sham adds two structures to this grammar:
+The Sham language defines the structure of the random data. This language is a superset of JSON that adds integer ranges, generator functions, and regular expressions. For the full grammar, refer to `doc/sham.ebnf`. For the base JSON grammar, refer to [RFC 8259](https://tools.ietf.org/html/rfc8259). Sham adds three structures to this grammar:
 
 ### Ranges
 
@@ -80,5 +88,16 @@ A terminal generator is a function identifier defined by the production
 generator : [a-zA-Z][a-zA-Z]* ;
 ```
 
-In the generated data, the terminal generator will be replaced by a single value. Generators must match a function defined by the `sham` CLI tool. Unkown generators will return an error.
+In the generated data, the terminal generator will be replaced by a single value. Generators must match a function defined by the `sham` CLI tool. Unkown generators will return a parsing error.
 
+### Regular Expressions
+
+While regular expressions are normally used to match text, Sham provides the ability to instead generate data from a regular expression. Regular expressions are defined by the production
+
+```ebnf
+regex : '/' .* '/'
+```
+
+> Note: This regular expression is simplified and technically incorrect. Any valid Go flavored regular expression should work though.
+
+More generally, a regular expression is a string of characters enclosed by two `/` characters. These expressions are of the Go flavor.

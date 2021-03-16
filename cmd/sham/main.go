@@ -48,14 +48,17 @@ var (
 
 func initCLIApp() {
 	flag.Usage = func() {
-		fmt.Println(`Usage of sham:
-  -f value
-        set the output format: json, xml (default json)
-  -n int
-        the number of generations to perform (default 1)
-  -pretty
-        pretty print the output
-		`)
+		fmt.Println(`sham is a tool for generating random data
+
+Usage:
+
+	sham [options] <schema>
+
+Options:
+	-f value	set the output format: json, xml (default json)
+	-n int		the number of generations to perform (default 1)		
+	-pretty		pretty print the result
+	-h, --help	show this help message`)
 	}
 
 	flag.BoolVar(&oPrettyPrint, "pretty", false, "pretty print the output")
