@@ -3,7 +3,7 @@
 package sham
 
 func Generate(schema []byte) (interface{}, error) {
-	s, err := NewParser(schema).Parse()
+	s, err := NewDefaultParser(schema).Parse()
 	if err != nil {
 		return nil, err
 	}

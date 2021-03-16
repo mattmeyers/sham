@@ -3,6 +3,7 @@ package gen
 import (
 	"math/rand"
 	"strings"
+	"time"
 )
 
 func getRandomString(vals []string) string { return vals[rand.Intn(len(vals))] }
@@ -32,4 +33,8 @@ func PhoneNumber() string {
 	}
 
 	return sb.String()
+}
+
+func Timestamp() time.Time {
+	return time.Unix(int64(rand.Intn(int(time.Now().Unix()))), 0)
 }

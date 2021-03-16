@@ -2,24 +2,71 @@ package main
 
 import (
 	"encoding/json"
+	"encoding/xml"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/mattmeyers/sham"
 )
 
+// format is a custom flag for defining the output format of the generated data.
+// This type implements the flag.Value interface and acts as an enum. If an
+// invalid value is provided on the command line, then and error will be returned.
+// The currently supported output formats are (case insensitive):
+//		- json (default)
+//		- xml
+type format string
+
+func (f *format) Set(s string) error {
+	s = strings.ToLower(s)
+
+	if s != "json" && s != "xml" {
+		return errors.New("unknown output format")
+	}
+
+	*f = format(s)
+
+	return nil
+}
+
+func (f *format) Get() interface{} { return string(*f) }
+
+func (f *format) String() string { return string(*f) }
+
 var (
-	oPrettyPrint = flag.Bool("pretty", false, "pretty print the output")
+	oPrettyPrint bool
+	oCount       int
+	oOutFormat   format = format("json")
 )
 
-func main() {
-	rand.Seed(time.Now().Unix())
+func initCLIApp() {
+	flag.Usage = func() {
+		fmt.Println(`Usage of sham:
+  -f value
+        set the output format: json, xml (default json)
+  -n int
+        the number of generations to perform (default 1)
+  -pretty
+        pretty print the output
+		`)
+	}
+
+	flag.BoolVar(&oPrettyPrint, "pretty", false, "pretty print the output")
+	flag.IntVar(&oCount, "n", 1, "the number of generations to perform")
+	flag.Var(&oOutFormat, "f", "set the output format: json, xml")
 	flag.Parse()
+}
+
+func main() {
+	initCLIApp()
+	rand.Seed(time.Now().Unix())
 
 	schema, err := readFromStdin()
 	if err != nil {
@@ -32,23 +79,18 @@ func main() {
 		schema = []byte(flag.Arg(0))
 	}
 
-	d, err := sham.Generate(schema)
+	p, err := sham.NewDefaultParser(schema).Parse()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var out []byte
-	if *oPrettyPrint {
-		out, err = json.MarshalIndent(d, "", "    ")
-	} else {
-		out, err = json.Marshal(d)
+	for i := 0; i < oCount; i++ {
+		e, err := encoders[string(oOutFormat)](p.Generate())
+		if err != nil {
+			log.Fatal(err)
+		}
+		writeToStdout(e)
 	}
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(string(out))
 }
 
 func readFromStdin() ([]byte, error) {
@@ -63,3 +105,46 @@ func readFromStdin() ([]byte, error) {
 
 	return ioutil.ReadAll(os.Stdin)
 }
+
+type encoder func(interface{}) ([]byte, error)
+
+var encoders = map[string]encoder{
+	"json": encodeJSON,
+	"xml":  encodeXML,
+}
+
+func encodeJSON(d interface{}) ([]byte, error) {
+	var out []byte
+	var err error
+
+	if oPrettyPrint {
+		out, err = json.MarshalIndent(d, "", "    ")
+	} else {
+		out, err = json.Marshal(d)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func encodeXML(d interface{}) ([]byte, error) {
+	var out []byte
+	var err error
+
+	if oPrettyPrint {
+		out, err = xml.MarshalIndent(d, "", "    ")
+	} else {
+		out, err = xml.Marshal(d)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func writeToStdout(d []byte) { fmt.Fprintln(os.Stdout, string(d)) }

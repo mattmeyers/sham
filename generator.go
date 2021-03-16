@@ -1,6 +1,10 @@
 package sham
 
-import "github.com/mattmeyers/sham/gen"
+import (
+	"time"
+
+	"github.com/mattmeyers/sham/gen"
+)
 
 // Generator represents the core functionality behind Sham's data generation.
 // Any type that implements this interface can be used to generate data. Implementors
@@ -17,8 +21,9 @@ type GeneratorFunc func() interface{}
 
 func (f GeneratorFunc) Generate() interface{} { return f() }
 
-func stringAdaptor(f func() string) func() interface{} { return func() interface{} { return f() } }
-func intAdaptor(f func() int) func() interface{}       { return func() interface{} { return f() } }
+func stringAdaptor(f func() string) func() interface{}  { return func() interface{} { return f() } }
+func intAdaptor(f func() int) func() interface{}        { return func() interface{} { return f() } }
+func timeAdaptor(f func() time.Time) func() interface{} { return func() interface{} { return f() } }
 
 // TerminalGenerators is the standard collection of terminal generators provided by Sham.
 var TerminalGenerators = map[string]Generator{
@@ -26,4 +31,5 @@ var TerminalGenerators = map[string]Generator{
 	"firstName":   GeneratorFunc(stringAdaptor(gen.FirstName)),
 	"lastName":    GeneratorFunc(stringAdaptor(gen.LastName)),
 	"phoneNumber": GeneratorFunc(stringAdaptor(gen.PhoneNumber)),
+	"timestamp":   GeneratorFunc(timeAdaptor(gen.Timestamp)),
 }

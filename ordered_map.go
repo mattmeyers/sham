@@ -2,6 +2,7 @@ package sham
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"strings"
 )
 
@@ -50,4 +51,27 @@ func (m *OrderedMap) MarshalJSON() ([]byte, error) {
 	sb.WriteByte('}')
 
 	return []byte(sb.String()), nil
+}
+
+func (m *OrderedMap) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	if start.Name.Local != "OrderedMap" {
+		if err := e.EncodeToken(start); err != nil {
+			return err
+		}
+	}
+
+	for _, key := range m.Keys {
+		err := e.EncodeElement(m.Values[key], xml.StartElement{Name: xml.Name{Space: "", Local: key}})
+		if err != nil {
+			return err
+		}
+	}
+
+	if start.Name.Local != "OrderedMap" {
+		if err := e.EncodeToken(xml.EndElement{Name: start.Name}); err != nil {
+			return err
+		}
+	}
+
+	return e.Flush()
 }
