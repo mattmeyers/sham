@@ -19,9 +19,10 @@ func TestTokenize(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Tokenize simple object",
-			source: []byte(`{"a": 123, "b": true, "c": "def",	"g": -1.56e-6}`),
+			name: "Tokenize array of objects",
+			source: []byte(`[{"a": 123,    "b": true, "c": "def",	"g": -1.56e-6, "h":name}]  `),
 			want: []Token{
+				{Type: TokLBracket, Value: "["},
 				{Type: TokLBrace, Value: "{"},
 				{Type: TokString, Value: "a"},
 				{Type: TokColon, Value: ":"},
@@ -38,7 +39,40 @@ func TestTokenize(t *testing.T) {
 				{Type: TokString, Value: "g"},
 				{Type: TokColon, Value: ":"},
 				{Type: TokFloat, Value: "-1.56e-6"},
+				{Type: TokComma, Value: ","},
+				{Type: TokString, Value: "h"},
+				{Type: TokColon, Value: ":"},
+				{Type: TokIdent, Value: "name"},
 				{Type: TokRBrace, Value: "}"},
+				{Type: TokRBracket, Value: "]"},
+			},
+			wantErr: false,
+		},
+		{
+			name:   "Tokenize range",
+			source: []byte(`(1, 2)`),
+			want: []Token{
+				{Type: TokLParen, Value: "("},
+				{Type: TokInteger, Value: "1"},
+				{Type: TokComma, Value: ","},
+				{Type: TokInteger, Value: "2"},
+				{Type: TokRParen, Value: ")"},
+			},
+			wantErr: false,
+		},
+		{
+			name:   "Tokenize fstring",
+			source: []byte("`foo ${bar}`"),
+			want: []Token{
+				{Type: TokFString, Value: "foo ${bar}"},
+			},
+			wantErr: false,
+		},
+		{
+			name:   "Tokenize regex",
+			source: []byte(`/^abc123.*\/(|)$/`),
+			want: []Token{
+				{Type: TokRegex, Value: `^abc123.*\/(|)$`},
 			},
 			wantErr: false,
 		},

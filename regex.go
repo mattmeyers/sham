@@ -7,6 +7,8 @@ import (
 
 const maxRepeats int = 10
 
+// NewRegex parses a regular expression. Regular expressions are of the Go flavor
+// and use Perl flags.
 func NewRegex(pattern string) (Regex, error) {
 	s, err := syntax.Parse(pattern, syntax.Perl)
 	if err != nil {
@@ -16,11 +18,21 @@ func NewRegex(pattern string) (Regex, error) {
 	return Regex{Pattern: pattern, regex: s.Simplify()}, nil
 }
 
+// Regex holds a compiled regex. While any valid regular expression can be
+// provided, only a subset will actually generate data. Every node in a
+// parsed regex leads to a possible choice. During data generation, a
+// random path through the parsed expression is taken. Therefore, a complciated
+// expression has the potential to lead to wildly different performance on
+// repeated generations.
+//
+// TODO: fully document nodes that can generate data
 type Regex struct {
 	Pattern string
 	regex   *syntax.Regexp
 }
 
+// Generate traverses a parsed regular expression and generates data where
+// applicable.
 func (r Regex) Generate() interface{} {
 	return string(r.gen(r.regex))
 }

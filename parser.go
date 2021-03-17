@@ -84,14 +84,12 @@ func (p *Parser) Parse() (Schema, error) {
 	}
 	p.tokens = tokens
 
-	root := Schema{}
-
-	root.Root, err = p.parseValue()
+	root, err := p.parseValue()
 	if err != nil {
 		return Schema{}, err
 	}
 
-	return root, nil
+	return Schema{Root: root}, nil
 }
 
 func (p *Parser) parseValue() (Node, error) {
@@ -264,7 +262,7 @@ func (p *Parser) parseRange() (r Range, err error) {
 	return r, nil
 }
 
-var fStringRegex = regexp.MustCompile(`\${([^\${}]*)}`)
+var fStringRegex = regexp.MustCompile(`{([^{}]*)}`)
 
 func (p *Parser) parseFString() (FormattedString, error) {
 	t := p.current()
@@ -277,7 +275,7 @@ func (p *Parser) parseFString() (FormattedString, error) {
 	params := make([]Generator, len(matches))
 
 	for i, m := range matches {
-		g, ok := TerminalGenerators[m[2:len(m)-1]]
+		g, ok := TerminalGenerators[m[1:len(m)-1]]
 		if !ok {
 			return FormattedString{}, fmt.Errorf("unknown terminal generator %s in formatted string", m)
 		}
